@@ -117,7 +117,9 @@ except FileNotFoundError as e:
 with st.sidebar:
     logo = HERE / "NeuroGene.png"
     if logo.exists():
-        st.image(Image.open(logo), width=150)
+        col_l, col_m, col_r = st.columns([1, 2, 1])
+        with col_m:
+          st.image(Image.open(logo), use_column_width=True)
     st.subheader("Input")
     upload = st.file_uploader("Expression CSV", type=["csv"],
                               help="Rows are samples, columns are gene symbols.")
