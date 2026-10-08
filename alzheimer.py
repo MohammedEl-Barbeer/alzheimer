@@ -129,7 +129,7 @@ if uploaded_file is not None:
 
 
                 
-                GENES = joblib.load('model_genes.pkl')  # 4576 gene symbols (uppercase)
+                GENES = joblib.load('alzheimer_model.pkl')  # 4576 gene symbols (uppercase)
                 if len(model_input) < 2:
                     st.error('Need at least 2 samples (the model was trained on per-gene z-scored data).')
                     st.stop()
