@@ -117,9 +117,11 @@ except FileNotFoundError as e:
 with st.sidebar:
     logo = HERE / "NeuroGene.png"
     if logo.exists():
+        # تعديل لضمان توسيط الشعار بدقة تامة في المنتصف داخل الشريط الجانبي
         col_l, col_m, col_r = st.columns([1, 2, 1])
         with col_m:
-          st.image(Image.open(logo), use_column_width=True)
+            st.image(Image.open(logo), use_container_width=True)
+            
     st.subheader("Input")
     upload = st.file_uploader("Expression CSV", type=["csv"],
                               help="Rows are samples, columns are gene symbols.")
@@ -192,8 +194,12 @@ with tab_calls:
     st.dataframe(table, hide_index=True, use_container_width=True,
                  column_config={"p(AD)": st.column_config.ProgressColumn(
                      "p(AD)", min_value=0.0, max_value=1.0, format="%.3f")})
-    st.download_button("Download calls as CSV", table.to_csv(index=False).encode(),
-                       "neurogene_calls.csv", "text/csv")
+    
+    # تحسين إضافي: تنظيم أزرار التصدير لتكون احترافية
+    c_btn1, c_btn2 = st.columns([1, 3])
+    with c_btn1:
+        st.download_button("📥 Download CSV", table.to_csv(index=False).encode(),
+                           "neurogene_calls.csv", "text/csv", use_container_width=True)
 
 # ---- Why this call
 with tab_why:
