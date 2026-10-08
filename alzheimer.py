@@ -39,12 +39,12 @@ st.markdown(
 
 # --- Display Project Logo ---
 try:
-    img = Image.open('NeuroGene.jpg')
+    img = Image.open('NeuroGene.jpeg')
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image(img, caption='NeuroGene Project - HIERO 2026', width=300)
 except FileNotFoundError:
-    st.warning('⚠️ Logo image "NeuroGene.jpg" not found. Please place it in the project folder.')
+    st.warning('⚠️ Logo image "NeuroGene.jpeg" not found. Please place it in the project folder.')
 
 st.title('🧬 Alzheimer Gene Expression Analysis System')
 st.markdown('***')
