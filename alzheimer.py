@@ -45,16 +45,16 @@ st.markdown(
 )
 
 
-# --- إضافة اللوجو والعنوان ---
+
 try:
-    # تحميل الصورة وعرضها بحجم مناسب
+
     img = Image.open('NeuroGene.jpeg')
-    # عرض الصورة في المنتصف بحجم 300 بكسل عرض
+
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image(img, caption='NeuroGene Project - HIERO 2026', width=300)
 except FileNotFoundError:
-    # في حال لم يتم العثور على الصورة، يتم تجاهلها
+
     st.warning(
         '⚠️ Logo image "NeuroGene.jpg" not found. Please place it in the project'
         ' folder.'
@@ -63,7 +63,7 @@ except FileNotFoundError:
 st.title('🧬 Alzheimer Gene Expression Analysis System')
 st.markdown(
     '***'
-) # خط فاصل أفقي جمالي
+) 
 st.write(
     'Interactive web application built for **HIERO 2026** to classify and analyze'
     ' gene expression samples.'
@@ -73,7 +73,7 @@ st.markdown(
 )
 
 
-# --- تحميل النموذج المدرب ---
+
 @st.cache_resource
 def load_model():
     return joblib.load('alzheimer_model.pkl')
@@ -87,9 +87,9 @@ except Exception as e:
         '❌ Model file not found. Please ensure alzheimer_model.pkl is in the'
         ' folder.'
     )
-    st.stop() # إيقاف التطبيق إذا لم يتم العثور على النموذج
+    st.stop()
 
-# --- الشريط الجانبي لرفع الملفات ---
+
 st.sidebar.header('1. Data Input')
 uploaded_file = st.sidebar.file_uploader(
     'Choose a pre-processed CSV data file', type=['csv']
@@ -97,7 +97,7 @@ uploaded_file = st.sidebar.file_uploader(
 
 if uploaded_file is not None:
     try:
-        # قراءة البيانات وعرض المعاينة
+
         input_data = pd.read_csv(uploaded_file)
         st.subheader('Uploaded Data Preview:')
         st.dataframe(input_data.head(), height=200)
@@ -108,15 +108,15 @@ if uploaded_file is not None:
 
         if st.sidebar.button('🚀 Run Prediction'):
             with st.spinner('Processing data and running classification...'):
-                # --- معالجة البيانات ومطابقة الأعمدة (الجزء الحرج) ---
+
                 model_input = input_data.copy()
 
-                # إسقاط الأعمدة غير المتعلقة بالجينات
+
                 for col in ['ID_REF', 'Patient', 'Stage']:
                     if col in model_input.columns:
                         model_input = model_input.drop(columns=[col])
 
-                # توحيد أسماء الأعمدة
+
                 model_input.columns = (
                     pd.Index(model_input.columns)
                     .astype(str)
@@ -124,30 +124,32 @@ if uploaded_file is not None:
                     .str.upper()
                 )
 
-                # معالجة التكرار في أسماء الجينات بأخذ المتوسط
+
                 model_input = model_input.T.groupby(level=0).mean().T
 
-                # مطابقة أعمدة النموذج تماماً
-                if hasattr(model, 'feature_names_in_'):
-                    expected_features = model.feature_names_in_
-                    # إضافة الأعمدة المفقودة بقيمة 0، وإسقاط الزائدة
-                    model_input = model_input.reindex(
-                        columns=expected_features, fill_value=0
-                    )
-                    st.success(
-                        f'Data successfully aligned with model features: {model_input.shape[1]} features matched.'
-                    )
-                else:
-                    st.warning(
-                        '⚠️ Warning: Model feature names not found. Prediction might fail if input format differs.'
-                    )
 
-                # --- تنفيذ التنبؤ ---
-                # إذا واجهتك خطأ X has 9746 features هنا، فالمشكلة في الملف المرفوع
-                predictions = model.predict(model_input)
-                probabilities = model.predict_proba(model_input)
+                
+                GENES = joblib.load('model_genes.pkl')  # 4576 gene symbols (uppercase)
+                if len(model_input) < 2:
+                    st.error('Need at least 2 samples (the model was trained on per-gene z-scored data).')
+                    st.stop()
 
-                # --- عرض النتائج بتنسيق احترافي ---
+                missing = [g for g in GENES if g not in model_input.columns]
+                if len(missing) > 0.05 * len(GENES):
+                    st.error(f'{len(missing)} of {len(GENES)} model genes are missing from the file. Check gene naming.')
+                    st.stop()
+
+                X = model_input.apply(pd.to_numeric, errors='coerce')
+                sd = X.std(ddof=1).replace(0, 1).fillna(1)
+                X = ((X - X.mean()) / sd).fillna(0)          # per-gene z-score, same as training
+                model_input = X.reindex(columns=GENES, fill_value=0.0)
+                st.success(f'Aligned to model genes: {len(GENES) - len(missing)}/{len(GENES)} matched.')
+
+
+                predictions = model.predict(model_input.values)
+                probabilities = model.predict_proba(model_input.values)
+
+
                 results_df = input_data.copy()
                 results_df['Final Prediction'] = np.where(
                     predictions == 1, 'Alzheimer (AD)', 'Control'
@@ -157,7 +159,7 @@ if uploaded_file is not None:
                 st.markdown('***')
                 st.subheader('🏆 Final Classification Results:')
                 
-                # استخدام التنسيق الشرطي لإبراز النتائج في جدول النتائج
+
                 def color_prediction(val):
                     color = '#ffcccc' if val == 'Alzheimer (AD)' else '#ccffcc'
                     return f'background-color: {color}'
@@ -170,7 +172,7 @@ if uploaded_file is not None:
                     height=600
                 )
                 
-                # إحصائيات سريعة للنتائج
+
                 ad_count = sum(predictions == 1)
                 ctrl_count = sum(predictions == 0)
                 st.write(f'📊 Summary: AD Cases: {ad_count}, Control Cases: {ctrl_count}')
@@ -181,7 +183,7 @@ if uploaded_file is not None:
             f' check your input file format. Error details: {err}'
         )
 else:
-    # رسالة ترحيبية في الجزء الرئيسي في حالة عدم وجود ملف
+
     st.markdown(
         """
         <div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; border: 1px solid #90caf9;">
@@ -201,7 +203,7 @@ else:
     st.markdown('***')
 
 
-# --- تذييل الصفحة (Footer) ---
+
 st.markdown(
     """
     <div style="text-align: center; color: #757575; padding-top: 50px;">
