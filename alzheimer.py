@@ -55,9 +55,21 @@ if uploaded_file is not None:
 
   if st.button('تنفيذ التنبؤ (Predict)'):
     try:
-      # تنفيذ التنبؤ باستخدام النموذج
-      predictions = model.predict(input_data)
-      probabilities = model.predict_proba(input_data)
+      # استبعاد الأعمدة النصية أو غير الرقمية مثل ID_REF أو Patient أو Stage إذا وجدت
+      # سنقوم بأخذ الأعمدة الرقمية فقط التي يتوقعها الموديل
+      model_input = input_data.select_dtypes(include=[np.number])
+
+      # إذا كان عمود ID_REF خارج التصنيف، نتأكد من إسقاطه إن وجد كعمود نصي
+      if 'ID_REF' in input_data.columns:
+        model_input = input_data.drop(columns=['ID_REF'], errors='ignore')
+      if 'Patient' in model_input.columns:
+        model_input = model_input.drop(columns=['Patient'], errors='ignore')
+      if 'Stage' in model_input.columns:
+        model_input = model_input.drop(columns=['Stage'], errors='ignore')
+
+      # تنفيذ التنبؤ باستخدام النماذج الرقمية فقط
+      predictions = model.predict(model_input)
+      probabilities = model.predict_proba(model_input)
 
       input_data['Prediction (0: Control, 1: AD)'] = predictions
       input_data['Confidence Score'] = np.max(probabilities, axis=1)
@@ -70,8 +82,3 @@ if uploaded_file is not None:
           f'حدث خطأ أثناء معالجة البيانات وتطبيق النموذج: تأكد من توافق'
           f' الأعمدة. الخطأ: {err}'
       )
-else:
-  st.info(
-      'الرجاء إرفاق ملف CSV يحتوي على قراءات الجينات عبر القائمة الجانبية لبدء'
-      ' التحليل.'
-  )
