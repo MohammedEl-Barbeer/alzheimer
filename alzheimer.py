@@ -105,7 +105,6 @@ if uploaded_file is not None:
 
                 # Align features strictly using expected model genes or feature_names_in_
                 if expected_genes is not None:
-                    # تنظيف أسماء الجينات المتوقعة لتتوافق مع المدخلات
                     clean_expected = [str(g).strip().upper() for g in expected_genes]
                     model_input = model_input.reindex(columns=clean_expected, fill_value=0)
                 elif hasattr(model, 'feature_names_in_'):
@@ -124,7 +123,11 @@ if uploaded_file is not None:
                 st.markdown('***')
                 st.subheader('🏆 Final Classification Results:')
 
-                # Styled dataframe using .map (compatible with Pandas modern versions)
+                # رفع الحد الأقصى لعدد الخلايا المسموح بعرضها في الـ Styler لتجنب أخطاء الأداء
+                total_cells = results_df.size
+                pd.set_option("styler.render.max_elements", max(400000, total_cells))
+
+                # Styled dataframe using .map
                 def color_prediction(val):
                     color = '#ffcccc' if val == 'Alzheimer (AD)' else '#ccffcc'
                     return f'background-color: {color}'
