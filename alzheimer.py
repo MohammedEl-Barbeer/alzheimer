@@ -1,3 +1,53 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Oct  8 16:59:32 2026
+
+@author: barber
+"""
+
+import joblib
+import numpy as np
+import pandas as pd
+import streamlit as st
+import warnings
+warnings.filterwarnings("ignore")
+
+
+# إعدادات صفحة الويب
+st.set_page_config(
+    page_title='Alzheimer Gene Expression Classifier', page_icon='🧬'
+)
+
+st.title('🧬 نظام تحليل التعبير الجيني لمرض الزهايمر')
+st.write(
+    'تطبيق ويب تفاعلي مبني ضمن فعاليات HIERO 2026 لتصنيف وتحليل عينات التعبير'
+    ' الجيني.'
+)
+
+
+
+# تحميل النموذج المحفوظ مسبقاً
+@st.cache_resource
+def load_model():
+  # تأكد من وضع ملف الوديل في نفس المجلد
+  return joblib.load('alzheimer_model.pkl')
+
+
+try:
+  model = load_model()
+  st.success('تم تحميل النموذج بنجاح!')
+except Exception as e:
+  st.warning(
+      'لم يتم العثور على ملف النموذج المحفوظ. الرجاء التأكد من رفع ملف'
+      ' alzheimer_model.pkl'
+  )
+
+# شريط جانبي لرفع الملفات
+st.sidebar.header('إدخال البيانات')
+uploaded_file = st.sidebar.file_uploader(
+    'اختر ملف البيانات (CSV)', type=['csv']
+)
+
 if uploaded_file is not None:
   input_data = pd.read_csv(uploaded_file)
   st.subheader('معاينة البيانات المدخلة:')
