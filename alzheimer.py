@@ -5,13 +5,13 @@ Created on Thu Oct  8 16:59:32 2026
 @author: barber
 """
 
+import warnings
 import joblib
 import numpy as np
 import pandas as pd
 import streamlit as st
-import warnings
-warnings.filterwarnings("ignore")
 
+warnings.filterwarnings('ignore')
 
 # إعدادات صفحة الويب
 st.set_page_config(
@@ -25,11 +25,9 @@ st.write(
 )
 
 
-
 # تحميل النموذج المحفوظ مسبقاً
 @st.cache_resource
 def load_model():
-  # تأكد من وضع ملف الوديل في نفس المجلد
   return joblib.load('alzheimer_model.pkl')
 
 
@@ -55,31 +53,29 @@ if uploaded_file is not None:
 
   if st.button('تنفيذ التنبؤ (Predict)'):
     try:
-      # تجهيز البيانات المدخلة لتتوافق مع توقعات الموديل (إسقاط الأعمدة غير الرقمية)
       model_input = input_data.copy()
-      if 'ID_REF' in model_input.columns:
-        model_input = model_input.drop(columns=['ID_REF'], errors='ignore')
-      if 'Patient' in model_input.columns:
-        model_input = model_input.drop(columns=['Patient'], errors='ignore')
-      if 'Stage' in model_input.columns:
-        model_input = model_input.drop(columns=['Stage'], errors='ignore')
 
-      # توحيد أسماء الأعمدة لتكون بحروف كبيرة ومطابقة تماماً لتدريب الموديل
+      # استبعاد الأعمدة النصية غير المرغوبة
+      for col in ['ID_REF', 'Patient', 'Stage']:
+        if col in model_input.columns:
+          model_input = model_input.drop(columns=[col])
+
+      # توحيد أسماء الأعمدة لتكون حروفاً كبيرة
       model_input.columns = (
           pd.Index(model_input.columns).astype(str).str.strip().str.upper()
       )
 
-      # إذا كان الموديل يحفظ أسماء الأعمدة أو يتوقع عدداً محدداً، سنقوم بمطابقتها
-      # بما أن الموديل يتوقع عدد ميزات معين (مثل 4576 جين)، سنقوم بأخذ أول 4576 عموداً رقمياً متوافقاً أو ضبط الفلترة
-      # الأفضل: إذا كانت البيانات المدخلة هي نفسها الملف الخام، نحتاج لتطبيق نفس تقطيع الجينات
+      # الحل الجذري للتكرار: دمج الأعمدة المكررة بأخذ المتوسط لضمان أسماء فريدة
+      model_input = model_input.T.groupby(level=0).mean().T
+
+      # مطابقة الأعمدة تماماً لما يتوقعه النموذج التدريبي إن وجد
       if hasattr(model, 'feature_names_in_'):
         expected_features = model.feature_names_in_
-        # تصفية الأعمدة لتشمل فقط الموجودة في تدريب النموذج
         model_input = model_input.reindex(
             columns=expected_features, fill_value=0
         )
 
-      # تنفيذ التنبؤ باستخدام النموذج المحفوظ
+      # تنفيذ التنبؤ
       predictions = model.predict(model_input)
       probabilities = model.predict_proba(model_input)
 
@@ -94,3 +90,8 @@ if uploaded_file is not None:
           f'حدث خطأ أثناء معالجة البيانات وتطبيق النموذج: تأكد من توافق'
           f' الأعمدة. الخطأ: {err}'
       )
+else:
+  st.info(
+      'الرجاء إرفاق ملف CSV يحتوي على قراءات الجينات عبر القائمة الجانبية لبدء'
+      ' التحليل.'
+  )
