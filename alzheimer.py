@@ -48,7 +48,7 @@ st.markdown(
 # --- إضافة اللوجو والعنوان ---
 try:
     # تحميل الصورة وعرضها بحجم مناسب
-    img = Image.open('NeuroGene.jpg')
+    img = Image.open('NeuroGene.jpeg')
     # عرض الصورة في المنتصف بحجم 300 بكسل عرض
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
