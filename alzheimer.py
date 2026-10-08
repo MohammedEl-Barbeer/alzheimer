@@ -115,7 +115,7 @@ except FileNotFoundError as e:
 
 # ------------------------------------------------------------------ sidebar
 with st.sidebar:
-    logo = HERE / "NeuroGene.jpeg"
+    logo = HERE / "NeuroGene.png"
     if logo.exists():
         st.image(Image.open(logo), width=150)
     st.subheader("Input")
