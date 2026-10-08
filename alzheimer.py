@@ -10,19 +10,18 @@ import joblib
 import numpy as np
 import pandas as pd
 import streamlit as st
-from PIL import Image # مكتبة ضرورية لعرض الصورة
+from PIL import Image
 
 warnings.filterwarnings('ignore')
 
-# إعدادات الصفحة
+# Page configuration
 st.set_page_config(
     page_title='Alzheimer Gene Expression Analysis System',
     page_icon='🧬',
-    layout='wide' # استخدام عرض الصفحة بالكامل لتنسيق أجمل
+    layout='wide'
 )
 
-# --- تنسيق احترافي للواجهة (CSS) ---
-# جعل الخطوط أوضح وتوسيع الحاوية الرئيسية
+# --- Custom CSS Styling ---
 st.markdown(
     """
     <style>
@@ -33,63 +32,45 @@ st.markdown(
         color: #1E88E5;
         font-family: 'Helvetica Neue', sans-serif;
     }
-    .stAlert > div {
-        font-family: 'Courier New', monospace;
-    }
-    .reportview-container .markdown-text-box {
-        font-family: 'Arial', sans-serif;
-    }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-
-
+# --- Display Project Logo ---
 try:
-
-    img = Image.open('NeuroGene.jpeg')
-
+    img = Image.open('NeuroGene.jpg')
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image(img, caption='NeuroGene Project - HIERO 2026', width=300)
 except FileNotFoundError:
-
-    st.warning(
-        '⚠️ Logo image "NeuroGene.jpg" not found. Please place it in the project'
-        ' folder.'
-    )
+    st.warning('⚠️ Logo image "NeuroGene.jpg" not found. Please place it in the project folder.')
 
 st.title('🧬 Alzheimer Gene Expression Analysis System')
-st.markdown(
-    '***'
-) 
+st.markdown('***')
 st.write(
-    'Interactive web application built for **HIERO 2026** to classify and analyze'
-    ' gene expression samples.'
+    'Interactive web application built for **HIERO 2026** to classify and analyze gene expression samples.'
 )
-st.markdown(
-    '***'
-)
+st.markdown('***')
 
-
-
+# --- Load Trained Model and Feature Names ---
 @st.cache_resource
-def load_model():
-    return joblib.load('alzheimer_model.pkl')
-
+def load_assets():
+    model = joblib.load('alzheimer_model.pkl')
+    try:
+        genes = joblib.load('model_genes.pkl')
+    except:
+        genes = None
+    return model, genes
 
 try:
-    model = load_model()
-    st.sidebar.success('Model loaded successfully!')
+    model, expected_genes = load_assets()
+    st.sidebar.success('Model and assets loaded successfully!')
 except Exception as e:
-    st.sidebar.error(
-        '❌ Model file not found. Please ensure alzheimer_model.pkl is in the'
-        ' folder.'
-    )
+    st.sidebar.error('❌ Required files not found. Ensure alzheimer_model.pkl exists.')
     st.stop()
 
-
+# --- Sidebar File Uploader ---
 st.sidebar.header('1. Data Input')
 uploaded_file = st.sidebar.file_uploader(
     'Choose a pre-processed CSV data file', type=['csv']
@@ -97,26 +78,21 @@ uploaded_file = st.sidebar.file_uploader(
 
 if uploaded_file is not None:
     try:
-
         input_data = pd.read_csv(uploaded_file)
         st.subheader('Uploaded Data Preview:')
         st.dataframe(input_data.head(), height=200)
-        st.info(
-            f'Data loaded successfully. Shape: {input_data.shape[0]} rows,'
-            f' {input_data.shape[1]} columns.'
-        )
+        st.info(f'Data loaded successfully. Shape: {input_data.shape[0]} rows, {input_data.shape[1]} columns.')
 
         if st.sidebar.button('🚀 Run Prediction'):
             with st.spinner('Processing data and running classification...'):
-
                 model_input = input_data.copy()
 
-
+                # Drop non-feature columns if present
                 for col in ['ID_REF', 'Patient', 'Stage']:
                     if col in model_input.columns:
                         model_input = model_input.drop(columns=[col])
 
-
+                # Standardize column names to uppercase
                 model_input.columns = (
                     pd.Index(model_input.columns)
                     .astype(str)
@@ -124,54 +100,42 @@ if uploaded_file is not None:
                     .str.upper()
                 )
 
-
+                # Handle duplicate columns by averaging
                 model_input = model_input.T.groupby(level=0).mean().T
 
+                # Align features strictly using expected model genes or feature_names_in_
+                if expected_genes is not None:
+                    # تنظيف أسماء الجينات المتوقعة لتتوافق مع المدخلات
+                    clean_expected = [str(g).strip().upper() for g in expected_genes]
+                    model_input = model_input.reindex(columns=clean_expected, fill_value=0)
+                elif hasattr(model, 'feature_names_in_'):
+                    model_input = model_input.reindex(columns=model.feature_names_in_, fill_value=0)
 
-                
-                GENES = joblib.load('model_genes.pkl')  # 4576 gene symbols (uppercase)
-                if len(model_input) < 2:
-                    st.error('Need at least 2 samples (the model was trained on per-gene z-scored data).')
-                    st.stop()
-
-                missing = [g for g in GENES if g not in model_input.columns]
-                if len(missing) > 0.05 * len(GENES):
-                    st.error(f'{len(missing)} of {len(GENES)} model genes are missing from the file. Check gene naming.')
-                    st.stop()
-
-                X = model_input.apply(pd.to_numeric, errors='coerce')
-                sd = X.std(ddof=1).replace(0, 1).fillna(1)
-                X = ((X - X.mean()) / sd).fillna(0)          # per-gene z-score, same as training
-                model_input = X.reindex(columns=GENES, fill_value=0.0)
-                st.success(f'Aligned to model genes: {len(GENES) - len(missing)}/{len(GENES)} matched.')
-
-
-                predictions = model.predict(model_input.values)
-                probabilities = model.predict_proba(model_input.values)
-
+                # Perform prediction
+                predictions = model.predict(model_input)
+                probabilities = model.predict_proba(model_input)
 
                 results_df = input_data.copy()
                 results_df['Final Prediction'] = np.where(
                     predictions == 1, 'Alzheimer (AD)', 'Control'
                 )
                 results_df['Prediction Score'] = np.max(probabilities, axis=1)
-                
+
                 st.markdown('***')
                 st.subheader('🏆 Final Classification Results:')
-                
 
+                # Styled dataframe using .map (compatible with Pandas modern versions)
                 def color_prediction(val):
                     color = '#ffcccc' if val == 'Alzheimer (AD)' else '#ccffcc'
                     return f'background-color: {color}'
 
                 st.dataframe(
-                    results_df.style.applymap(
+                    results_df.style.map(
                         color_prediction, subset=['Final Prediction']
                     )
                     .format({'Prediction Score': '{:.4f}'}),
                     height=600
                 )
-                
 
                 ad_count = sum(predictions == 1)
                 ctrl_count = sum(predictions == 0)
@@ -179,22 +143,17 @@ if uploaded_file is not None:
 
     except Exception as err:
         st.error(
-            '❌ An error occurred during data processing and model prediction. Please'
-            f' check your input file format. Error details: {err}'
+            '❌ An error occurred during data processing and model prediction. Please check your input file format. Error details: '
+            f'{err}'
         )
 else:
-
     st.markdown(
         """
         <div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; border: 1px solid #90caf9;">
             <h3 style="color: #0d47a1;">👋 Welcome to NeuroGene Classifier</h3>
             <p style="color: #1565c0; font-size: 1.1em;">
             To begin the analysis, please upload a pre-processed Gene Expression CSV file 
-            via the sidebar on the left. 
-            <br><br>
-            Ensure the file contains only the relevant gene expression values 
-            (after filtering and standardization) and does not include non-numeric columns 
-            like Patient ID or Stage, or that you handle them properly if you included them.
+            via the sidebar on the left.
             </p>
         </div>
         """,
@@ -202,8 +161,7 @@ else:
     )
     st.markdown('***')
 
-
-
+# --- Footer ---
 st.markdown(
     """
     <div style="text-align: center; color: #757575; padding-top: 50px;">
