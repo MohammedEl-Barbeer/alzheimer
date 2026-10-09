@@ -36,9 +36,21 @@ header[data-testid="stHeader"] { background:transparent; }
 [data-testid="stSidebar"] { background:#E4EAEF; border-right:1px solid #C9D3DB; }
 .logo-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 15px; }
 
-.hero-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; margin-bottom: 25px; }
-.hero-box h1 { color: #0D1520; font-size: 2.5rem; margin-bottom: 10px; }
-.hero-box p { color: #5B6A78; font-size: 1.1rem; max-width: 700px; margin: 0 auto; line-height: 1.6; }
+.hero-box { background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; margin-bottom: 30px; }
+.hero-box h1 { color: #0D1520; font-size: 2.6rem; margin-bottom: 12px; }
+.hero-box p { color: #44525F; font-size: 1.15rem; max-width: 750px; margin: 0 auto; line-height: 1.6; }
+
+/* تنسيق الصور والشعارات بحدود احترافية وظلال أنيقة */
+.styled-img {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+    background: white;
+    padding: 8px;
+}
+.styled-img:hover {
+    transform: translateY(-3px);
+}
 
 .mast { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:1.4rem; }
 .mast h1 { font-size:2.15rem; line-height:1.15; margin:0; padding:0; max-width:18ch; }
@@ -125,40 +137,40 @@ if "Home Overview" in app_page:
     st.markdown("<p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Logos layout as requested
+    # Top Logos: knowture.png & mans.png with controlled width and centering
     col1, col2 = st.columns(2)
     with col1:
         know_logo = HERE / "knowture.png"
         if know_logo.exists():
-            st.image(Image.open(know_logo), use_container_width=True)
+            st.image(Image.open(know_logo), width=280)
     with col2:
-        mans_logo = HERE / "mans.png" # تأكد من وجود شعار المنصورة أو استبداله إن لزم
+        mans_logo = HERE / "mans.png"
         if mans_logo.exists():
-            st.image(Image.open(mans_logo), use_container_width=True)
+            st.image(Image.open(mans_logo), width=280)
 
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # Flags & DAAD layout
+    # Bottom Row: Egyptian Flag, DAAD Logo, German Flag
     f_col1, f_col2, f_col3 = st.columns(3)
     with f_col1:
         eg_flag = HERE / "eg.webp"
         if eg_flag.exists():
-            st.image(Image.open(eg_flag), width=120)
+            st.image(Image.open(eg_flag), width=160)
     with f_col2:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
-            st.image(Image.open(daad_logo), width=120)
+            st.image(Image.open(daad_logo), width=180)
     with f_col3:
         gr_flag = HERE / "gr.webp"
         if gr_flag.exists():
-            st.image(Image.open(gr_flag), width=120)
+            st.image(Image.open(gr_flag), width=160)
 
     st.markdown("---")
     
     st.subheader("Project Overview & Architecture")
     st.markdown("""
     **NeuroGene** is a state-of-the-art computational platform designed to support early and precise detection of Alzheimer's Disease. 
-    Our research leverages a robust tri-modal architecture:
+    Our research leverages a robust tri-modal intelligence architecture combining:
     1. **Gene Expression Profiling:** Analyzes hippocampal microarray and gene expression data to detect molecular signatures and pathways associated with neurodegeneration.
     2. **MRI Brain Scan Classification:** Employs advanced dimensionality reduction (PCA) and support vector machines (SVM) to classify structural brain MRI scans across clinical dementia stages.
     3. **Clinical Assessment Module:** Evaluates patient-specific clinical parameters, cognitive scores (MMSE), and diagnostic metrics using optimized Random Forest estimators.
@@ -327,7 +339,9 @@ else:
 
     @st.cache_resource
     def get_clinical_model():
-        return load_clinical_artifacts()
+        model = joblib.load(HERE / "clinical_alzheimer.pkl")
+        features = joblib.load(HERE / "clinical_features.pkl")
+        return model, features
 
     try:
         clinical_model, clinical_features = get_clinical_model()
@@ -348,7 +362,6 @@ else:
         submitted = st.form_submit_button("🔍 Run Clinical Prediction", type="primary", use_container_width=True)
 
     if submitted:
-        # ترتيب الخصائص المطابق تماماً لتدريب النموذج: ['Age', 'M/F', 'Educ', 'SES', 'MMSE', 'CDR']
         input_data = pd.DataFrame([[age, gender, educ, ses, mmse, cdr]], columns=clinical_features)
         
         if clinical_model is not None:
