@@ -145,7 +145,7 @@ if "Home Overview" in app_page:
     # 1. شعار knowture.png في منتصف الصفحة وحدها
     know_logo = HERE / "knowture.png"
     if know_logo.exists():
-        col_l, col_m, col_r = st.columns([2, 2, 2])
+        col_l, col_m, col_r = st.columns([1, 4, 1])
         with col_m:
             st.image(Image.open(know_logo), width=240)
 
@@ -165,7 +165,7 @@ if "Home Overview" in app_page:
     with r_col3:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
-            st.image(Image.open(daad_logo), width=95)
+            st.image(Image.open(daad_logo), width=100)
     with r_col4:
         gr_flag = HERE / "gr.webp"
         if gr_flag.exists():
