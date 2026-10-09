@@ -138,7 +138,7 @@ with st.sidebar:
 # ================================================================== PAGE 0: HOME OVERVIEW
 if "Home Overview" in app_page:
     st.markdown('<div class="centered-header">', unsafe_allow_html=True)
-    st.markdown("<h1>NeuroGene: Integrated Alzheimer Platform</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>NeuroGene: A Multimodal Framework for Alzheimer’s Disease Diagnosis</h1>", unsafe_allow_html=True)
     st.markdown("<p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -157,7 +157,7 @@ if "Home Overview" in app_page:
     with r_col1:
         eg_flag = HERE / "eg.webp"
         if eg_flag.exists():
-            st.image(Image.open(eg_flag), width=130)
+            st.image(Image.open(eg_flag), width=100)
     with r_col2:
         mans_logo = HERE / "mans.png"
         if mans_logo.exists():
@@ -165,11 +165,11 @@ if "Home Overview" in app_page:
     with r_col3:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
-            st.image(Image.open(daad_logo), width=120)
+            st.image(Image.open(daad_logo), width=90)
     with r_col4:
         gr_flag = HERE / "gr.webp"
         if gr_flag.exists():
-            st.image(Image.open(gr_flag), width=130)
+            st.image(Image.open(gr_flag), width=100)
 
     st.markdown("---")
     
