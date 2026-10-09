@@ -31,36 +31,40 @@ html, body, .stApp, [class*="css"] { font-family:'Schibsted Grotesk', system-ui,
 .stApp { background:#F2F5F7; }
 h1, h2, h3, .serif { font-family:'Source Serif 4', Georgia, serif !important; font-weight:600; letter-spacing:-0.01em; }
 
-/* إزالة الشريط الأبيض العلوي واختفاء أدوات الـ Header */
-header[data-testid="stHeader"] { display: none !important; visibility: hidden !important; background: transparent !important; }
+/* إزالة تامة لأي شريط أبيض علوي وإخفاء الهيدر الافتراضي */
+header[data-testid="stHeader"] { display: none !important; visibility: hidden !important; height: 0px !important; background: transparent !important; }
+.stMainBlockContainer { padding-top: 0rem !important; }
 #MainMenu, footer { visibility:hidden; }
-.block-container { padding-top: 1.5rem !important; max-width:1240px; }
+.block-container { padding-top: 1rem !important; max-width:1240px; }
 [data-testid="stSidebar"] { background:#E4EAEF; border-right:1px solid #C9D3DB; }
-.logo-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 15px; }
 
-.hero-box { background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; margin-bottom: 30px; }
-.hero-box h1 { color: #0D1520; font-size: 2.5rem; margin-bottom: 12px; }
-.hero-box p { color: #44525F; font-size: 1.15rem; max-width: 750px; margin: 0 auto; line-height: 1.6; }
+.hero-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; margin-bottom: 25px; }
+.hero-box h1 { color: #0D1520; font-size: 2.3rem; margin-bottom: 8px; }
+.hero-box p { color: #44525F; font-size: 1.05rem; max-width: 700px; margin: 0 auto; line-height: 1.5; }
 
-/* تنسيق دقيق لتوحيد مقاسات الشعارات والأعلام مع ظل احترافي */
-.brand-img {
-    height: 90px;
+/* تنسيق دقيق لتوحيد مقاسات الشعارات والأعلام وتجنب الضخامة */
+.center-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.center-logo img {
+    max-height: 80px;
     object-fit: contain;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     background: white;
     padding: 6px;
-    margin: 0 auto;
-    display: block;
 }
 
-.flag-img {
-    height: 75px;
+.row-img {
+    height: 65px;
     object-fit: contain;
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
     background: white;
-    padding: 6px;
+    padding: 5px;
     margin: 0 auto;
     display: block;
 }
@@ -150,34 +154,34 @@ if "Home Overview" in app_page:
     st.markdown("<p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Top Logos: knowture.png & mans.png with equal balanced columns and centered layout
-    col1, col2 = st.columns(2)
-    with col1:
-        know_logo = HERE / "knowture.png"
-        if know_logo.exists():
-            st.markdown(f'<div style="text-align: center;"><img src="data:image/png;base64,{base64_img(know_logo)}" class="styled-img" style="max-height:85px;"></div>' if False else '', unsafe_allow_html=True)
-            st.image(Image.open(know_logo), width=260)
-    with col2:
-        mans_logo = HERE / "mans.png"
-        if mans_logo.exists():
-            st.image(Image.open(mans_logo), width=200)
+    # 1. شعار knowture.png في منتصف الصفحة وحدها
+    know_logo = HERE / "knowture.png"
+    if know_logo.exists():
+        col_l, col_m, col_r = st.columns([2, 2, 2])
+        with col_m:
+            st.image(Image.open(know_logo), width=240)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # Bottom Row: Egyptian Flag, DAAD Logo, German Flag with perfectly controlled dimensions
-    f_col1, f_col2, f_col3 = st.columns(3)
-    with f_col1:
+    # 2. الصف التالي: علم مصر، شعار جامعة المنصورة، شعار daad، علم ألمانيا
+    r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+    
+    with r_col1:
         eg_flag = HERE / "eg.webp"
         if eg_flag.exists():
-            st.image(Image.open(eg_flag), width=150)
-    with f_col2:
+            st.image(Image.open(eg_flag), width=130)
+    with r_col2:
+        mans_logo = HERE / "mans.png"
+        if mans_logo.exists():
+            st.image(Image.open(mans_logo), width=110)
+    with r_col3:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
-            st.image(Image.open(daad_logo), width=160)
-    with f_col3:
+            st.image(Image.open(daad_logo), width=120)
+    with r_col4:
         gr_flag = HERE / "gr.webp"
         if gr_flag.exists():
-            st.image(Image.open(gr_flag), width=150)
+            st.image(Image.open(gr_flag), width=130)
 
     st.markdown("---")
     
