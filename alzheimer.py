@@ -145,7 +145,7 @@ if "Home Overview" in app_page:
     # 1. شعار knowture.png في منتصف الصفحة وحدها
     know_logo = HERE / "knowture.png"
     if know_logo.exists():
-        col_l, col_m, col_r = st.columns([1, 4, 1])
+        col_l, col_m, col_r = st.columns([2, 3, 1])
         with col_m:
             st.image(Image.open(know_logo), width=240)
 
