@@ -34,7 +34,8 @@ header[data-testid="stHeader"] { background:transparent; }
 #MainMenu, footer { visibility:hidden; }
 .block-container { padding-top:2.2rem; max-width:1240px; }
 [data-testid="stSidebar"] { background:#E4EAEF; border-right:1px solid #C9D3DB; }
-.logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 15px; }
+.logo-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px; }
+.logo-container img { display: block; margin: 0 auto; max-width: 140px; }
 
 .mast { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:1.4rem; }
 .mast h1 { font-size:2.15rem; line-height:1.15; margin:0; padding:0; max-width:18ch; }
@@ -47,48 +48,81 @@ header[data-testid="stHeader"] { background:transparent; }
 .spot.idle { background:#1B2837; box-shadow:none; }
 .spot.dev { animation:develop .8s ease-out both; animation-delay:var(--d); }
 @keyframes develop { from { opacity:0; transform:scale(.3); } to { opacity:1; transform:scale(1); } }
+.slide-cap { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-top:18px; color:#8FA1B3; font-size:.86rem; }
+.scale { display:flex; align-items:center; gap:10px; }
+.scale i { display:block; width:170px; height:6px; border-radius:3px; background:linear-gradient(90deg,#1FAA8C,#465262,#D6336C); }
 
 .verdict { font-size:1.55rem; line-height:1.35; margin:1.4rem 0 .4rem; max-width:34em; }
 .verdict b { font-weight:600; }
 .verdict .ad { color:#D6336C; } .verdict .ctl { color:#1FAA8C; } .verdict .unk { color:#6B7A88; }
 .note { color:#5B6A78; font-size:.92rem; max-width:62ch; line-height:1.5; }
+.stTabs [data-baseweb="tab-list"] { gap:28px; border-bottom:1px solid #C9D3DB; }
+.stTabs [data-baseweb="tab"] { padding:10px 0; font-weight:500; }
 .foot { color:#7C8A97; font-size:.82rem; margin-top:3rem; border-top:1px solid #D3DBE2; padding-top:12px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
+
+# ------------------------------------------------------------------ Helpers
+@st.cache_resource
+def load_gene_artifacts():
+    model = joblib.load(HERE / "alzheimer_model.pkl")
+    genes = list(joblib.load(HERE / "model_genes.pkl"))
+    return getattr(model, "best_estimator_", model), genes
+
+def plot_base(fig, height=360):
+    fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      font=dict(family="Schibsted Grotesk, sans-serif", color=INK, size=13))
+    fig.update_xaxes(showline=True, linecolor="#9AA8B5", gridcolor="#DCE3E9")
+    fig.update_yaxes(showline=True, linecolor="#9AA8B5", gridcolor="#DCE3E9")
+    return fig
+
+def slide_html(probs=None, names=None):
+    if probs is None:
+        spots = "".join('<i class="spot idle"></i>' for _ in range(48))
+        cap = "Each spot will be one sample. Upload a file and score it to develop the slide."
+    else:
+        out = []
+        for i, p in enumerate(probs):
+            r, g, b = core.spot_rgb(p)
+            tip = html.escape(f"{names[i]}: p(AD) = {p:.2f}")
+            out.append(f'<i class="spot dev" title="{tip}" style="--c:rgb({r},{g},{b});'
+                       f'--g:rgba({r},{g},{b},.55);--d:{min(i * 14, 1400)}ms"></i>')
+        spots = "".join(out)
+        cap = f"{len(probs)} samples. Hover a spot for its sample ID and score."
+    return (f'<div class="slide"><div class="slide-grid">{spots}</div>'
+            f'<div class="slide-cap"><span>{cap}</span>'
+            f'<span class="scale">Control<i></i>Alzheimer &nbsp;(dim = no clear call)</span></div></div>')
 
 # ------------------------------------------------------------------ Sidebar Navigation & Centered Logo
 with st.sidebar:
     logo = HERE / "NeuroGene.png"
     if logo.exists():
-        st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-        st.image(Image.open(logo), width=130)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="logo-container"><img src="app/static/{logo.name}" width="130"></div>', unsafe_allow_html=True)
+        # بديل آمن لتوسيط الصورة في Streamlit
+        col_l, col_m, col_r = st.sidebar.columns([1, 2, 1])
+        with col_m:
+            st.image(Image.open(logo), use_container_width=True)
             
-    st.subheader("Navigation | وحدات النظام")
+    st.subheader("Navigation")
     app_page = st.selectbox(
-        "اختر واجهة العمل:",
-        ["🧬 Gene Expression Classifier", "🧠 MRI Brain Scan Classifier"]
+        "Select Module:",
+        ["Gene Expression Classifier", "MRI Brain Scan Classifier"]
     )
     st.markdown("---")
 
 # ================================================================== MODULE 1: GENE EXPRESSION
 if "Gene Expression" in app_page:
-    @st.cache_resource
-    def load_gene_artifacts():
-        model = joblib.load(HERE / "alzheimer_model.pkl")
-        genes = list(joblib.load(HERE / "model_genes.pkl"))
-        return getattr(model, "best_estimator_", model), genes
-
     try:
         est, GENES = load_gene_artifacts()
     except Exception as e:
-        st.error(f"⚠️ خطأ في تحميل ملفات الجينات: {e}")
+        st.error(f"Missing file: {e}")
         st.stop()
 
     st.markdown("""
     <div class="mast">
       <div>
-        <h1>Alzheimer's Gene-Expression Classifier</h1>
+        <h1>Alzheimer's gene-expression classifier</h1>
         <p>Upload hippocampal expression profiles. Each sample gets a score and the genes that pushed it toward Alzheimer or control.</p>
       </div>
       <div class="meta">NeuroGene<br>HIERO 2026</div>
@@ -96,10 +130,12 @@ if "Gene Expression" in app_page:
     """, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.subheader("Gene Input Settings")
+        st.subheader("Input Settings")
         upload = st.file_uploader("Expression CSV", type=["csv"], help="Rows are samples, columns are gene symbols.")
-        band = st.slider("Inconclusive band around 0.5", 0.0, 0.25, 0.10, 0.01)
+        band = st.slider("Inconclusive band around 0.5", 0.0, 0.25, 0.10, 0.01, help="Samples with p(AD) inside this band are not called.")
         run = st.button("Score samples", type="primary", use_container_width=True)
+        with st.expander("File format"):
+            st.markdown(f"- One row per sample, one column per gene symbol.\n- At least 2 samples.\n- At least {core.MIN_COVERAGE:.0%} of the {len(GENES)} model genes present.")
 
     if run and upload is not None:
         try:
@@ -107,37 +143,79 @@ if "Gene Expression" in app_page:
             meta, Z, n_missing = core.prepare(raw, GENES)
             prob, contrib, sel, b0 = core.score(est, Z, GENES)
             names = (meta["ID_REF"].astype(str).tolist() if "ID_REF" in meta else [f"S{i + 1}" for i in range(len(Z))])
-            st.session_state["res_gene"] = dict(file=upload.name, meta=meta, prob=prob, contrib=contrib, sel=sel, b0=b0, names=names, n_missing=n_missing)
+            st.session_state["res"] = dict(file=upload.name, meta=meta, prob=prob, contrib=contrib, sel=sel, b0=b0, names=names, n_missing=n_missing)
         except Exception as err:
-            st.session_state.pop("res_gene", None)
+            st.session_state.pop("res", None)
             st.error(f"Could not score this file. {err}")
 
-    res = st.session_state.get("res_gene")
+    res = st.session_state.get("res")
+
     if res is None:
-        st.markdown(f'<div class="slide"><div class="slide-grid">{"".join("<i class=\"spot idle\"></i>" for _ in range(48))}</div><div class="slide-cap"><span>Upload a CSV in the sidebar and score it.</span></div></div>', unsafe_allow_html=True)
+        st.markdown(slide_html(), unsafe_allow_html=True)
+        st.markdown('<p class="note" style="margin-top:1.2rem">Start in the sidebar: choose a CSV, then press <b>Score samples</b>.</p>', unsafe_allow_html=True)
     else:
         prob, names, meta = res["prob"], res["names"], res["meta"]
         call = core.calls(prob, band)
         n_ad, n_ct, n_un = (int((call == c).sum()) for c in ("Alzheimer", "Control", "Inconclusive"))
-        
-        st.markdown(f'<p class="verdict serif"><b class="ad">{n_ad}</b> of {len(prob)} samples read as Alzheimer, <b class="ctl">{n_ct}</b> as control, <b class="unk">{n_un}</b> inconclusive.</p>', unsafe_allow_html=True)
-        
-        tab_calls, tab_why = st.tabs(["Calls", "Why this call"])
+
+        st.markdown(slide_html(prob, names), unsafe_allow_html=True)
+        st.markdown(f'<p class="verdict serif"><b class="ad">{n_ad}</b> of {len(prob)} samples read as Alzheimer, '
+                    f'<b class="ctl">{n_ct}</b> as control, <b class="unk">{n_un}</b> inconclusive.</p>'
+                    f'<p class="note">{html.escape(res["file"])}'
+                    + (f" &middot; {res['n_missing']} model genes were absent and set to cohort mean." if res["n_missing"] else "") + "</p>", unsafe_allow_html=True)
+
+        tab_calls, tab_why, tab_cohort, tab_method = st.tabs(["Calls", "Why this call", "Cohort view", "Method and limits"])
+
         with tab_calls:
+            order = np.argsort(prob)
+            fig = go.Figure(go.Bar(
+                x=[names[i] for i in order], y=prob[order],
+                marker_color=[f"rgb{core.spot_rgb(p)}" for p in prob[order]],
+                hovertemplate="%{x}<br>p(AD) = %{y:.3f}<extra></extra>"))
+            fig.add_hrect(y0=0.5 - band, y1=0.5 + band, fillcolor="#9AA8B5", opacity=0.18, line_width=0)
+            fig.add_hline(y=0.5, line_dash="dot", line_color="#6B7A88")
+            fig.update_yaxes(title="p(Alzheimer)", range=[0, 1])
+            fig.update_xaxes(showticklabels=len(prob) <= 40, title="Samples, ordered by score")
+            st.plotly_chart(plot_base(fig, 320), use_container_width=True)
+
             table = meta.copy()
             table.insert(0, "Sample", names)
             table["p(AD)"] = prob
             table["Call"] = call
-            st.dataframe(table, hide_index=True, use_container_width=True)
+            st.dataframe(table, hide_index=True, use_container_width=True,
+                         column_config={"p(AD)": st.column_config.ProgressColumn("p(AD)", min_value=0.0, max_value=1.0, format="%.3f")})
             st.download_button("📥 Download CSV", table.to_csv(index=False).encode(), "neurogene_calls.csv", "text/csv")
+
         with tab_why:
             pick = st.selectbox("Sample", names, index=int(np.argmax(prob)))
             i = names.index(pick)
             c = res["contrib"][i]
+            logit = c.sum() + res["b0"]
+            st.markdown(f'<p class="note">Log-odds of Alzheimer for <b>{html.escape(pick)}</b> are <b>{logit:+.2f}</b> (p = {prob[i]:.2f}).</p>', unsafe_allow_html=True)
             o = np.argsort(c)
             pick_idx = np.concatenate([o[:10], o[-10:]])
-            fig = go.Figure(go.Bar(x=c[pick_idx], y=res["sel"][pick_idx], orientation="h", marker_color=[MAG if v > 0 else TEAL for v in c[pick_idx]]))
-            st.plotly_chart(fig, use_container_width=True)
+            fig = go.Figure(go.Bar(x=c[pick_idx], y=res["sel"][pick_idx], orientation="h",
+                                   marker_color=[MAG if v > 0 else TEAL for v in c[pick_idx]]))
+            fig.update_xaxes(title="Contribution to log-odds", zeroline=True, zerolinecolor=INK)
+            st.plotly_chart(plot_base(fig, 520), use_container_width=True)
+
+        with tab_cohort:
+            k = 30
+            top = np.argsort(np.abs(res["contrib"]).mean(0))[-k:][::-1]
+            ordr = np.argsort(prob)
+            M = res["contrib"][ordr][:, top].T
+            lim = float(np.abs(M).max()) or 1.0
+            fig = go.Figure(go.Heatmap(
+                z=M, x=[names[j] for j in ordr], y=res["sel"][top], zmin=-lim, zmax=lim,
+                colorscale=[[0, TEAL], [0.5, "#F2F5F7"], [1, MAG]], colorbar=dict(title="log-odds", thickness=12)))
+            fig.update_yaxes(autorange="reversed")
+            st.plotly_chart(plot_base(fig, 640), use_container_width=True)
+
+        with tab_method:
+            st.markdown("""
+            **Model:** Standardized expression profiling, ANOVA feature selection, and L2-regularized logistic regression.  
+            **Limits:** Research prototype for HIERO 2026. Not a diagnostic device.
+            """)
 
 # ================================================================== MODULE 2: MRI ANALYSIS
 else:
@@ -171,17 +249,16 @@ else:
         if st.button("🔍 Run MRI Classification", type="primary"):
             if mri_model is not None:
                 try:
-                    # تجهيز الصورة ومعالجتها لتتوافق مع مدخلات نموذج PCA/SVM المرفق
-                    img_resized = img.resize((64, 64))
+                    # تعديل حجم الصورة إلى 128x128 لتتوافق مع 16384 ميزة المتوقعة بواسطة نموذج PCA
+                    img_resized = img.resize((128, 128))
                     arr = np.array(img_resized).flatten().reshape(1, -1)
                     pred = mri_model.predict(arr)[0]
-                    # تحديد اسم الفئة إن كانت مخزنة كقائمة أو مصفوفة
                     label_name = class_names[pred] if class_names and pred < len(class_names) else f"Class {pred}"
                     
-                    st.markdown(f"### النتيجة التشخيصية: **{label_name}**")
+                    st.markdown(f"### Diagnostic Prediction: **{label_name}**")
                 except Exception as ex:
-                    st.error(f"حدث خطأ أثناء معالجة الصورة بالنموذج: {ex}")
+                    st.error(f"Error during MRI prediction processing: {ex}")
             else:
-                st.warning("⚠️ نموذج الـ MRI (`svm_alzheimer.pkl`) غير متوفر في المستودع.")
+                st.warning("⚠️ MRI model artifact (`svm_alzheimer.pkl`) not found in repository.")
 
 st.markdown('<div class="foot">NeuroGene &copy; 2026 &middot; HIERO 2026 research prototype</div>', unsafe_allow_html=True)
