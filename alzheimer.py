@@ -38,35 +38,23 @@ header[data-testid="stHeader"] { display: none !important; visibility: hidden !i
 .block-container { padding-top: 1rem !important; max-width:1240px; }
 [data-testid="stSidebar"] { background:#E4EAEF; border-right:1px solid #C9D3DB; }
 
-.hero-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; margin-bottom: 25px; }
-.hero-box h1 { color: #0D1520; font-size: 2.3rem; margin-bottom: 8px; }
-.hero-box p { color: #44525F; font-size: 1.05rem; max-width: 700px; margin: 0 auto; line-height: 1.5; }
-
-/* تنسيق دقيق لتوحيد مقاسات الشعارات والأعلام وتجنب الضخامة */
-.center-logo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
+/* تنسيق وتوسيط النصوص في الصفحة الرئيسية */
+.centered-header {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 30px;
 }
-.center-logo img {
-    max-height: 80px;
-    object-fit: contain;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    background: white;
-    padding: 6px;
+.centered-header h1 {
+    color: #0D1520;
+    font-size: 2.6rem;
+    margin-bottom: 12px;
 }
-
-.row-img {
-    height: 65px;
-    object-fit: contain;
-    border-radius: 6px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
-    background: white;
-    padding: 5px;
+.centered-header p {
+    color: #44525F;
+    font-size: 1.15rem;
+    max-width: 750px;
     margin: 0 auto;
-    display: block;
+    line-height: 1.6;
 }
 
 .mast { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:1.4rem; }
@@ -149,7 +137,7 @@ with st.sidebar:
 
 # ================================================================== PAGE 0: HOME OVERVIEW
 if "Home Overview" in app_page:
-    st.markdown('<div class="hero-box">', unsafe_allow_html=True)
+    st.markdown('<div class="centered-header">', unsafe_allow_html=True)
     st.markdown("<h1>NeuroGene: Integrated Alzheimer Platform</h1>", unsafe_allow_html=True)
     st.markdown("<p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -163,7 +151,7 @@ if "Home Overview" in app_page:
 
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 2. الصف التالي: علم مصر، شعار جامعة المنصورة، شعار daad، علم ألمانيا
+    # 2. الصف التالي: علم مصر، شعار جامعة المنصورة (بحجم منضبط)، شعار دااد، علم ألمانيا
     r_col1, r_col2, r_col3, r_col4 = st.columns(4)
     
     with r_col1:
@@ -173,7 +161,7 @@ if "Home Overview" in app_page:
     with r_col2:
         mans_logo = HERE / "mans.png"
         if mans_logo.exists():
-            st.image(Image.open(mans_logo), width=110)
+            st.image(Image.open(mans_logo), width=90)  # تصحيح الحجم ليكون متناسقاً وغير ضخم
     with r_col3:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
