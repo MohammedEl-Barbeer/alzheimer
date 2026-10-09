@@ -165,7 +165,7 @@ if "Home Overview" in app_page:
     with r_col3:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
-            st.image(Image.open(daad_logo), width=90)
+            st.image(Image.open(daad_logo), width=95)
     with r_col4:
         gr_flag = HERE / "gr.webp"
         if gr_flag.exists():
