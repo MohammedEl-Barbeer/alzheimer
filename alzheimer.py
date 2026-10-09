@@ -58,7 +58,7 @@ header[data-testid="stHeader"] { display: none !important; visibility: hidden !i
 }
 
 .mast { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:1.4rem; }
-.mast h1 { font-size:2.15rem; line-height:1.15; margin:0; padding:0; max-width:18ch; }
+.mast h1 { font-size:2rem; line-height:1.15; margin:0; padding:0; max-width:18ch; text-shadow: 0px 0px 1px;}
 .mast p { margin:.6rem 0 0; max-width:58ch; color:#44525F; font-size:1.02rem; line-height:1.5; }
 .mast .meta { color:#6B7A88; font-size:.9rem; text-align:right; }
 
@@ -145,7 +145,7 @@ if "Home Overview" in app_page:
     # 1. شعار knowture.png في منتصف الصفحة وحدها
     know_logo = HERE / "knowture.png"
     if know_logo.exists():
-        col_l, col_m, col_r = st.columns([2, 3, 1])
+        col_l, col_m, col_r = st.columns([2, 2, 2])
         with col_m:
             st.image(Image.open(know_logo), width=240)
 
