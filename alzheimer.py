@@ -30,26 +30,39 @@ st.markdown("""
 html, body, .stApp, [class*="css"] { font-family:'Schibsted Grotesk', system-ui, sans-serif; color:#16202B; }
 .stApp { background:#F2F5F7; }
 h1, h2, h3, .serif { font-family:'Source Serif 4', Georgia, serif !important; font-weight:600; letter-spacing:-0.01em; }
-header[data-testid="stHeader"] { background:transparent; }
+
+/* إزالة الشريط الأبيض العلوي واختفاء أدوات الـ Header */
+header[data-testid="stHeader"] { display: none !important; visibility: hidden !important; background: transparent !important; }
 #MainMenu, footer { visibility:hidden; }
-.block-container { padding-top:2.2rem; max-width:1240px; }
+.block-container { padding-top: 1.5rem !important; max-width:1240px; }
 [data-testid="stSidebar"] { background:#E4EAEF; border-right:1px solid #C9D3DB; }
 .logo-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 15px; }
 
 .hero-box { background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; margin-bottom: 30px; }
-.hero-box h1 { color: #0D1520; font-size: 2.6rem; margin-bottom: 12px; }
+.hero-box h1 { color: #0D1520; font-size: 2.5rem; margin-bottom: 12px; }
 .hero-box p { color: #44525F; font-size: 1.15rem; max-width: 750px; margin: 0 auto; line-height: 1.6; }
 
-/* تنسيق الصور والشعارات بحدود احترافية وظلال أنيقة */
-.styled-img {
-    border-radius: 8px;
+/* تنسيق دقيق لتوحيد مقاسات الشعارات والأعلام مع ظل احترافي */
+.brand-img {
+    height: 90px;
+    object-fit: contain;
+    border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: transform 0.3s ease;
     background: white;
-    padding: 8px;
+    padding: 6px;
+    margin: 0 auto;
+    display: block;
 }
-.styled-img:hover {
-    transform: translateY(-3px);
+
+.flag-img {
+    height: 75px;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: white;
+    padding: 6px;
+    margin: 0 auto;
+    display: block;
 }
 
 .mast { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:1.4rem; }
@@ -137,33 +150,34 @@ if "Home Overview" in app_page:
     st.markdown("<p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Top Logos: knowture.png & mans.png with controlled width and centering
+    # Top Logos: knowture.png & mans.png with equal balanced columns and centered layout
     col1, col2 = st.columns(2)
     with col1:
         know_logo = HERE / "knowture.png"
         if know_logo.exists():
-            st.image(Image.open(know_logo), width=280)
+            st.markdown(f'<div style="text-align: center;"><img src="data:image/png;base64,{base64_img(know_logo)}" class="styled-img" style="max-height:85px;"></div>' if False else '', unsafe_allow_html=True)
+            st.image(Image.open(know_logo), width=260)
     with col2:
         mans_logo = HERE / "mans.png"
         if mans_logo.exists():
-            st.image(Image.open(mans_logo), width=280)
+            st.image(Image.open(mans_logo), width=200)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # Bottom Row: Egyptian Flag, DAAD Logo, German Flag
+    # Bottom Row: Egyptian Flag, DAAD Logo, German Flag with perfectly controlled dimensions
     f_col1, f_col2, f_col3 = st.columns(3)
     with f_col1:
         eg_flag = HERE / "eg.webp"
         if eg_flag.exists():
-            st.image(Image.open(eg_flag), width=160)
+            st.image(Image.open(eg_flag), width=150)
     with f_col2:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
-            st.image(Image.open(daad_logo), width=180)
+            st.image(Image.open(daad_logo), width=160)
     with f_col3:
         gr_flag = HERE / "gr.webp"
         if gr_flag.exists():
-            st.image(Image.open(gr_flag), width=160)
+            st.image(Image.open(gr_flag), width=150)
 
     st.markdown("---")
     
@@ -171,9 +185,9 @@ if "Home Overview" in app_page:
     st.markdown("""
     **NeuroGene** is a state-of-the-art computational platform designed to support early and precise detection of Alzheimer's Disease. 
     Our research leverages a robust tri-modal intelligence architecture combining:
-    1. **Gene Expression Profiling:** Analyzes hippocampal microarray and gene expression data to detect molecular signatures and pathways associated with neurodegeneration.
-    2. **MRI Brain Scan Classification:** Employs advanced dimensionality reduction (PCA) and support vector machines (SVM) to classify structural brain MRI scans across clinical dementia stages.
-    3. **Clinical Assessment Module:** Evaluates patient-specific clinical parameters, cognitive scores (MMSE), and diagnostic metrics using optimized Random Forest estimators.
+    1. **Gene Expression Profiling (`gene`):** Analyzes hippocampal microarray and gene expression data to detect molecular signatures and pathways associated with neurodegeneration.
+    2. **MRI Brain Scan Classification (`mri`):** Employs advanced dimensionality reduction (PCA) and support vector machines (SVM) to classify structural brain MRI scans across clinical dementia stages.
+    3. **Clinical Assessment Module (`clinical`):** Evaluates patient-specific clinical parameters, cognitive scores (MMSE), and diagnostic metrics using optimized Random Forest estimators.
     """)
 
 # ================================================================== MODULE 1: GENE EXPRESSION
