@@ -34,8 +34,11 @@ header[data-testid="stHeader"] { background:transparent; }
 #MainMenu, footer { visibility:hidden; }
 .block-container { padding-top:2.2rem; max-width:1240px; }
 [data-testid="stSidebar"] { background:#E4EAEF; border-right:1px solid #C9D3DB; }
-.logo-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px; }
-.logo-container img { display: block; margin: 0 auto; max-width: 140px; }
+.logo-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 15px; }
+
+.hero-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; margin-bottom: 25px; }
+.hero-box h1 { color: #0D1520; font-size: 2.5rem; margin-bottom: 10px; }
+.hero-box p { color: #5B6A78; font-size: 1.1rem; max-width: 700px; margin: 0 auto; line-height: 1.6; }
 
 .mast { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:1.4rem; }
 .mast h1 { font-size:2.15rem; line-height:1.15; margin:0; padding:0; max-width:18ch; }
@@ -69,6 +72,12 @@ def load_gene_artifacts():
     genes = list(joblib.load(HERE / "model_genes.pkl"))
     return getattr(model, "best_estimator_", model), genes
 
+@st.cache_resource
+def load_clinical_artifacts():
+    model = joblib.load(HERE / "clinical_alzheimer.pkl")
+    features = joblib.load(HERE / "clinical_features.pkl")
+    return model, features
+
 def plot_base(fig, height=360):
     fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10),
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
@@ -98,8 +107,6 @@ def slide_html(probs=None, names=None):
 with st.sidebar:
     logo = HERE / "NeuroGene.png"
     if logo.exists():
-        st.markdown(f'<div class="logo-container"><img src="app/static/{logo.name}" width="130"></div>', unsafe_allow_html=True)
-        # بديل آمن لتوسيط الصورة في Streamlit
         col_l, col_m, col_r = st.sidebar.columns([1, 2, 1])
         with col_m:
             st.image(Image.open(logo), use_container_width=True)
@@ -107,12 +114,58 @@ with st.sidebar:
     st.subheader("Navigation")
     app_page = st.selectbox(
         "Select Module:",
-        ["Gene Expression Classifier", "MRI Brain Scan Classifier"]
+        ["Home Overview", "Gene Expression Classifier", "MRI Brain Scan Classifier", "Clinical Assessment"]
     )
     st.markdown("---")
 
+# ================================================================== PAGE 0: HOME OVERVIEW
+if "Home Overview" in app_page:
+    st.markdown('<div class="hero-box">', unsafe_allow_html=True)
+    st.markdown("<h1>NeuroGene: Integrated Alzheimer Platform</h1>", unsafe_allow_html=True)
+    st.markdown("<p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Logos layout as requested
+    col1, col2 = st.columns(2)
+    with col1:
+        know_logo = HERE / "knowture.png"
+        if know_logo.exists():
+            st.image(Image.open(know_logo), use_container_width=True)
+    with col2:
+        mans_logo = HERE / "mans.png" # تأكد من وجود شعار المنصورة أو استبداله إن لزم
+        if mans_logo.exists():
+            st.image(Image.open(mans_logo), use_container_width=True)
+
+    st.markdown("---")
+    
+    # Flags & DAAD layout
+    f_col1, f_col2, f_col3 = st.columns(3)
+    with f_col1:
+        eg_flag = HERE / "eg.webp"
+        if eg_flag.exists():
+            st.image(Image.open(eg_flag), width=120)
+    with f_col2:
+        daad_logo = HERE / "daad.webp"
+        if daad_logo.exists():
+            st.image(Image.open(daad_logo), width=120)
+    with f_col3:
+        gr_flag = HERE / "gr.webp"
+        if gr_flag.exists():
+            st.image(Image.open(gr_flag), width=120)
+
+    st.markdown("---")
+    
+    st.subheader("Project Overview & Architecture")
+    st.markdown("""
+    **NeuroGene** is a state-of-the-art computational platform designed to support early and precise detection of Alzheimer's Disease. 
+    Our research leverages a robust tri-modal architecture:
+    1. **Gene Expression Profiling:** Analyzes hippocampal microarray and gene expression data to detect molecular signatures and pathways associated with neurodegeneration.
+    2. **MRI Brain Scan Classification:** Employs advanced dimensionality reduction (PCA) and support vector machines (SVM) to classify structural brain MRI scans across clinical dementia stages.
+    3. **Clinical Assessment Module:** Evaluates patient-specific clinical parameters, cognitive scores (MMSE), and diagnostic metrics using optimized Random Forest estimators.
+    """)
+
 # ================================================================== MODULE 1: GENE EXPRESSION
-if "Gene Expression" in app_page:
+elif "Gene Expression" in app_page:
     try:
         est, GENES = load_gene_artifacts()
     except Exception as e:
@@ -218,7 +271,7 @@ if "Gene Expression" in app_page:
             """)
 
 # ================================================================== MODULE 2: MRI ANALYSIS
-else:
+elif "MRI Brain Scan" in app_page:
     st.markdown("""
     <div class="mast">
       <div>
@@ -249,7 +302,6 @@ else:
         if st.button("🔍 Run MRI Classification", type="primary"):
             if mri_model is not None:
                 try:
-                    # تعديل حجم الصورة إلى 128x128 لتتوافق مع 16384 ميزة المتوقعة بواسطة نموذج PCA
                     img_resized = img.resize((128, 128))
                     arr = np.array(img_resized).flatten().reshape(1, -1)
                     pred = mri_model.predict(arr)[0]
@@ -260,5 +312,85 @@ else:
                     st.error(f"Error during MRI prediction processing: {ex}")
             else:
                 st.warning("⚠️ MRI model artifact (`svm_alzheimer.pkl`) not found in repository.")
+
+# ================================================================== MODULE 3: CLINICAL ASSESSMENT
+else:
+    st.markdown("""
+    <div class="mast">
+      <div>
+        <h1>Clinical Assessment Predictor</h1>
+        <p>Input patient clinical metrics and cognitive test scores for Random Forest-based Alzheimer's diagnosis.</p>
+      </div>
+      <div class="meta">NeuroGene<br>HIERO 2026</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    @st.cache_resource
+    def get_clinical_model():
+        return load_clinical_artifacts()
+
+    try:
+        clinical_model, clinical_features = get_clinical_model()
+    except Exception as e:
+        clinical_model, clinical_features = None, ['Age', 'M/F', 'Educ', 'SES', 'MMSE', 'CDR']
+
+    with st.form("clinical_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            age = st.slider("Age", 50, 95, 70, help="Patient age in years")
+            gender = st.selectbox("Gender (M/F)", options=[0, 1], format_func=lambda x: "Male" if x == 0 else "Female")
+            educ = st.slider("Education (Educ - Years)", 0, 25, 12)
+        with col2:
+            ses = st.slider("Socioeconomic Status (SES)", 1, 5, 3)
+            mmse = st.slider("Mini-Mental State Examination (MMSE)", 0, 30, 24, help="Cognitive score (0-30)")
+            cdr = st.selectbox("Clinical Dementia Rating (CDR)", options=[0.0, 0.5, 1.0, 2.0], format_func=lambda x: str(x))
+
+        submitted = st.form_submit_button("🔍 Run Clinical Prediction", type="primary", use_container_width=True)
+
+    if submitted:
+        # ترتيب الخصائص المطابق تماماً لتدريب النموذج: ['Age', 'M/F', 'Educ', 'SES', 'MMSE', 'CDR']
+        input_data = pd.DataFrame([[age, gender, educ, ses, mmse, cdr]], columns=clinical_features)
+        
+        if clinical_model is not None:
+            try:
+                pred_val = clinical_model.predict(input_data)[0]
+                pred_proba = clinical_model.predict_proba(input_data)[0] if hasattr(clinical_model, "predict_proba") else None
+                
+                st.markdown("---")
+                st.subheader("Diagnostic Results")
+                
+                res_col1, res_col2 = st.columns(2)
+                with res_col1:
+                    if pred_val == 1:
+                        st.markdown('<p class="verdict serif"><b class="ad">Positive for Alzheimer / Dementia Risk</b></p>', unsafe_allow_html=True)
+                    else:
+                        st.markdown('<p class="verdict serif"><b class="ctl">Normal / Non-Demented Control</b></p>', unsafe_allow_html=True)
+                    
+                    if pred_proba is not None:
+                        st.metric("Estimated Risk Probability", f"{pred_proba[1]:.3f}")
+                
+                with res_col2:
+                    if pred_proba is not None:
+                        fig_gauge = go.Figure(go.Indicator(
+                            mode = "gauge+number",
+                            value = pred_proba[1] * 100,
+                            domain = {'x': [0, 1], 'y': [0, 1]},
+                            title = {'text': "Dementia Risk (%)"},
+                            gauge = {
+                                'axis': {'range': [0, 100]},
+                                'bar': {'color': "#D6336C" if pred_val == 1 else "#1FAA8C"},
+                                'steps': [
+                                    {'range': [0, 50], 'color': "#E4EAEF"},
+                                    {'range': [50, 100], 'color': "#FAD2E1"}
+                                ]
+                            }
+                        ))
+                        fig_gauge.update_layout(height=230, margin=dict(l=20, r=20, t=30, b=10))
+                        st.plotly_chart(fig_gauge, use_container_width=True)
+                        
+            except Exception as err:
+                st.error(f"Error during clinical model prediction: {err}")
+        else:
+            st.warning("⚠️ Clinical model artifact (`clinical_alzheimer.pkl`) missing.")
 
 st.markdown('<div class="foot">NeuroGene &copy; 2026 &middot; HIERO 2026 research prototype</div>', unsafe_allow_html=True)
