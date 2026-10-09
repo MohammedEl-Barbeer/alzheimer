@@ -151,7 +151,7 @@ if "Home Overview" in app_page:
 
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 2. الصف التالي: علم مصر، شعار جامعة المنصورة (بحجم منضبط)، شعار دااد، علم ألمانيا
+    # 2. الصف التالي: علم مصر، شعار جامعة المنصورة، شعار دااد، علم ألمانيا
     r_col1, r_col2, r_col3, r_col4 = st.columns(4)
     
     with r_col1:
@@ -161,7 +161,7 @@ if "Home Overview" in app_page:
     with r_col2:
         mans_logo = HERE / "mans.png"
         if mans_logo.exists():
-            st.image(Image.open(mans_logo), width=90)  # تصحيح الحجم ليكون متناسقاً وغير ضخم
+            st.image(Image.open(mans_logo), width=90)
     with r_col3:
         daad_logo = HERE / "daad.webp"
         if daad_logo.exists():
@@ -321,7 +321,8 @@ elif "MRI Brain Scan" in app_page:
             if mri_model is not None:
                 try:
                     img_resized = img.resize((128, 128))
-                    arr = np.array(img_resized).flatten().reshape(1, -1)
+                    # التصحيح الأساسي هنا: التطبيع (Normalization) بالقسمة على 255.0 ليتطابق مع نطاق التدريب
+                    arr = np.array(img_resized, dtype=np.float32).flatten().reshape(1, -1) / 255.0
                     pred = mri_model.predict(arr)[0]
                     label_name = class_names[pred] if class_names and pred < len(class_names) else f"Class {pred}"
                     
