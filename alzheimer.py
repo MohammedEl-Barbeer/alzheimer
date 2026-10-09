@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """NeuroGene - Integrated Alzheimer Platform (HIERO 2026)."""
+import base64
 import html
 import warnings
 from pathlib import Path
@@ -82,6 +83,67 @@ header[data-testid="stHeader"] { display: none !important; visibility: hidden !i
 </style>
 """, unsafe_allow_html=True)
 
+# ------------------------------------------------------------------ Theme: logo colours, background, banner (all pages)
+BG_OPACITY = 0.20   # background image opacity: 0.05 very faint ... 0.30 stronger
+
+@st.cache_data
+def b64(path_str):
+    with open(path_str, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+_bg_file, _logo_file = HERE / "bg.png", HERE / "NeuroGene.png"
+_bg_css = ""
+if _bg_file.exists():
+    _bg_css = ('.stApp::before { content:""; position:fixed; inset:0; '
+               'background:url("data:image/png;base64,' + b64(str(_bg_file)) + '") center/cover no-repeat; '
+               'opacity:' + str(BG_OPACITY) + '; z-index:0; pointer-events:none; }')
+
+THEME_CSS = """
+<style>
+:root { --teal-dark:#0B3C49; --teal:#1B7F8C; --blue:#2A5FA8; --gold:#C9A24B; }
+
+/* background image */
+.stApp { background:#f4f7fa; }
+/*BG*/
+.block-container, [data-testid="stMainBlockContainer"] { position:relative; z-index:1; }
+
+/* centred logo */
+.logo-wrap { display:flex; justify-content:center; margin-bottom:.5rem; }
+.logo-wrap img { width:260px; max-width:60%; }
+
+/* sidebar */
+[data-testid="stSidebar"] { border-right:none; }
+[data-testid="stSidebar"] > div:first-child { background:linear-gradient(180deg,#0B3C49 0%,#1B7F8C 55%,#2A5FA8 100%); }
+[data-testid="stSidebar"] * { color:#ffffff !important; }
+[data-testid="stSidebar"] hr { border-color:rgba(255,255,255,.3); }
+[data-testid="stSidebar"] [data-baseweb="select"] > div { background:#ffffff; }
+[data-testid="stSidebar"] [data-baseweb="select"] * { color:#0B3C49 !important; }
+[data-testid="stSidebar"] [data-testid="stFileUploader"] section { background:rgba(255,255,255,.12); border:1px dashed rgba(255,255,255,.5); border-radius:10px; }
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button { background:#ffffff; }
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button * { color:#0B3C49 !important; }
+[data-testid="stSidebar"] [data-testid="stExpander"] { border:1px solid rgba(255,255,255,.35); border-radius:10px; background:rgba(255,255,255,.08); }
+
+/* top banner (every page) */
+.hero, .mast {
+    background:linear-gradient(120deg,#0B3C49 0%,#1B7F8C 60%,#2A5FA8 100%);
+    border-bottom:4px solid var(--gold);
+    border-radius:14px;
+    padding:28px 28px;
+    margin-bottom:1.2rem;
+}
+.hero { text-align:center; }
+.hero h1, .mast h1 { color:#ffffff !important; margin:0; text-shadow:none; }
+.hero h1 { font-size:2.2rem; }
+.hero p, .mast p { color:#d6eef0 !important; margin:6px auto 0; }
+.mast .meta { color:#cfe6e9 !important; }
+</style>
+""".replace("/*BG*/", _bg_css)
+st.markdown(THEME_CSS, unsafe_allow_html=True)
+
+if _logo_file.exists():
+    st.markdown('<div class="logo-wrap"><img src="data:image/png;base64,' + b64(str(_logo_file)) + '"></div>',
+                unsafe_allow_html=True)
+
 # ------------------------------------------------------------------ Helpers
 @st.cache_resource
 def load_gene_artifacts():
@@ -122,12 +184,6 @@ def slide_html(probs=None, names=None):
 
 # ------------------------------------------------------------------ Sidebar Navigation & Centered Logo
 with st.sidebar:
-    logo = HERE / "NeuroGene.png"
-    if logo.exists():
-        col_l, col_m, col_r = st.sidebar.columns([1, 2, 1])
-        with col_m:
-            st.image(Image.open(logo), use_container_width=True)
-            
     st.subheader("Navigation")
     app_page = st.selectbox(
         "Select Module:",
@@ -137,10 +193,12 @@ with st.sidebar:
 
 # ================================================================== PAGE 0: HOME OVERVIEW
 if "Home Overview" in app_page:
-    st.markdown('<div class="centered-header">', unsafe_allow_html=True)
-    st.markdown("<h1>NeuroGene: A Multimodal Framework for Alzheimer’s Disease Diagnosis</h1>", unsafe_allow_html=True)
-    st.markdown("<p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="hero">
+      <h1>NeuroGene: A Multimodal Framework for Alzheimer’s Disease Diagnosis</h1>
+      <p>Advanced multi-modal intelligence platform for Alzheimer's disease diagnosis developed for HIERO 2026.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # 1. شعار knowture.png في منتصف الصفحة وحدها
     know_logo = HERE / "knowture.png"
